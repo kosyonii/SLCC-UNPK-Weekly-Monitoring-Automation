@@ -20,7 +20,10 @@ def log_run(
     error: str | None = None,
     elapsed_seconds: float | None = None,
     today: date | None = None,
+    period_start: date | None = None,
+    period_end: date | None = None,
 ) -> None:
+    """period_start/end는 추출 기간. status가 success인 기록의 period_end가 다음 실행의 시작일 기준이 된다."""
     entry = {
         "date": (today or date.today()).isoformat(),
         "timestamp": datetime.now().isoformat(timespec="seconds"),
@@ -28,6 +31,8 @@ def log_run(
         "row_count": row_count,
         "error": error,
         "elapsed_seconds": elapsed_seconds,
+        "period_start": period_start.isoformat() if period_start else None,
+        "period_end": period_end.isoformat() if period_end else None,
     }
     with RUN_LOG_PATH.open("a", encoding="utf-8") as f:
         f.write(json.dumps(entry, ensure_ascii=False) + "\n")

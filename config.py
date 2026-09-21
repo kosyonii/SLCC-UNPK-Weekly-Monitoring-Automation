@@ -18,6 +18,9 @@ GCP_PROJECT_ID: str = os.getenv("GCP_PROJECT_ID", "slcc-buzz-agent-dev")
 ROW_COUNT_MIN: int = int(os.getenv("ROW_COUNT_MIN", "2000"))
 ROW_COUNT_MAX: int = int(os.getenv("ROW_COUNT_MAX", "2400"))
 
+# 추출 기간이 이 일수를 넘으면 기간 확인 시 경고한다.
+MAX_PERIOD_DAYS: int = int(os.getenv("MAX_PERIOD_DAYS", "5"))
+
 # --- 알림 ---
 OUTLOOK_RECIPIENT: str = os.getenv("OUTLOOK_RECIPIENT", "")
 

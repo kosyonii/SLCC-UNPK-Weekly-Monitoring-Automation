@@ -1,7 +1,7 @@
 """
 추출 결과 검수 로직.
 
-- 날짜 범위 검증 (월요일=직전 금~일 3일치, 그 외=전일 하루, 공휴일 미고려)
+- 날짜 범위 검증 (period.py 가 정한 추출 기간 start~end 와 데이터의 날짜가 정확히 일치해야 함)
 - subsidiary/region/scope = Global/global 100% 검증
 - 행 수 검증 (하루당 2000~2400, 추출 일수만큼 곱해서 비교)
 """
@@ -25,36 +25,19 @@ class ValidationResult:
         self.issues.append(issue)
 
 
-def expected_date_range(today: date | None = None) -> tuple[date, date]:
-    """
-    오늘 날짜 기준 예상 추출 날짜 범위를 계산한다.
-    월요일(weekday()==0)이면 직전 금~일 3일치, 그 외엔 전일 하루.
-    """
-    today = today or date.today()
-    yesterday = today - timedelta(days=1)
-
-    if today.weekday() == 0:  # Monday
-        start = today - timedelta(days=3)  # Friday
-    else:
-        start = yesterday
-
-    return start, yesterday
-
-
 def _date_span(start: date, end: date) -> set[date]:
     return {start + timedelta(days=i) for i in range((end - start).days + 1)}
 
 
-def validate_dates(df: pd.DataFrame, today: date | None = None) -> ValidationResult:
+def validate_dates(df: pd.DataFrame, start: date, end: date) -> ValidationResult:
     result = ValidationResult(passed=True)
-    expected_start, expected_end = expected_date_range(today)
-    expected_span = _date_span(expected_start, expected_end)
+    expected_span = _date_span(start, end)
 
     actual_dates = set(pd.to_datetime(df["date"]).dt.date)
 
     unexpected = sorted(actual_dates - expected_span)
     if unexpected:
-        result.add(f"예상 범위({expected_start}~{expected_end}) 밖의 날짜 발견: {unexpected}")
+        result.add(f"예상 범위({start}~{end}) 밖의 날짜 발견: {unexpected}")
 
     missing = sorted(expected_span - actual_dates)
     if missing:
@@ -80,12 +63,12 @@ def validate_global_scope(df: pd.DataFrame) -> ValidationResult:
     return result
 
 
-def validate_row_count(df: pd.DataFrame, today: date | None = None) -> ValidationResult:
-    """ROW_COUNT_MIN/MAX는 하루당 기준이므로 예상 추출 일수를 곱해 비교한다."""
+def validate_row_count(df: pd.DataFrame, start: date, end: date) -> ValidationResult:
+    """ROW_COUNT_MIN/MAX는 하루당 기준이므로 추출 기간의 일수를 곱해 비교한다."""
     result = ValidationResult(passed=True)
     count = len(df)
 
-    days = len(_date_span(*expected_date_range(today)))
+    days = (end - start).days + 1
     total_min = ROW_COUNT_MIN * days
     total_max = ROW_COUNT_MAX * days
 
@@ -98,9 +81,9 @@ def validate_row_count(df: pd.DataFrame, today: date | None = None) -> Validatio
     return result
 
 
-def run_all_validations(df: pd.DataFrame) -> dict[str, ValidationResult]:
+def run_all_validations(df: pd.DataFrame, start: date, end: date) -> dict[str, ValidationResult]:
     return {
-        "date": validate_dates(df),
+        "date": validate_dates(df, start, end),
         "global_scope": validate_global_scope(df),
-        "row_count": validate_row_count(df),
+        "row_count": validate_row_count(df, start, end),
     }

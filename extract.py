@@ -7,8 +7,11 @@ sql/unpk_query.sql 은 쿼리 내부에 D-1 데이터 적재 여부 확인(check
 """
 from __future__ import annotations
 
+from datetime import date
+
 import pandas as pd
 from google.api_core.exceptions import BadRequest
+from google.cloud import bigquery
 
 from config import SQL_QUERY_PATH
 from db_connector import get_client
@@ -22,18 +25,25 @@ def load_query() -> str:
     return SQL_QUERY_PATH.read_text(encoding="utf-8")
 
 
-def run_extraction() -> pd.DataFrame:
+def run_extraction(start: date, end: date) -> pd.DataFrame:
     """
-    쿼리를 실행하고 결과를 DataFrame으로 반환한다.
+    start~end(양 끝 포함) 기간으로 쿼리를 실행하고 결과를 DataFrame으로 반환한다.
+    기간은 쿼리 파라미터 @start_date / @end_date 로 전달된다.
 
     Raises:
         DataNotReadyError: 쿼리 내 ERROR()가 발생한 경우 (예: D-1 데이터 미적재)
     """
     client = get_client()
     query = load_query()
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ScalarQueryParameter("start_date", "DATE", start),
+            bigquery.ScalarQueryParameter("end_date", "DATE", end),
+        ]
+    )
 
     try:
-        job = client.query(query)
+        job = client.query(query, job_config=job_config)
         df = job.result().to_dataframe()
     except BadRequest as exc:
         # 쿼리 내 ERROR() 메시지를 그대로 보존해서 올린다.

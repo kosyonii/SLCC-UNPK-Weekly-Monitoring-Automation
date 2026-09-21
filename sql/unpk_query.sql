@@ -7,21 +7,16 @@
 
 WITH params AS (
   SELECT
-    -- 기본 조회 기간
-    --   월요일 실행: 직전 금요일~일요일
-    --   화~일요일 실행: 전일 하루
-    -- 수동 기간 조회가 필요하면 아래 start_date/end_date 두 식을
-    -- DATE 'YYYY-MM-DD' 형태의 고정값으로 변경
-    CASE
-      WHEN EXTRACT(DAYOFWEEK FROM CURRENT_DATE('Asia/Seoul')) = 2
-        THEN DATE_SUB(CURRENT_DATE('Asia/Seoul'), INTERVAL 3 DAY)
-      ELSE DATE_SUB(CURRENT_DATE('Asia/Seoul'), INTERVAL 1 DAY)
-    END AS start_date,
-    DATE_SUB(CURRENT_DATE('Asia/Seoul'), INTERVAL 1 DAY) AS end_date,
+    -- 조회 기간은 쿼리 파라미터로 받는다 (main.py -> period.py 가 결정하고 사람이 확인).
+    --   기본: 마지막 성공 실행의 종료일 다음 날 ~ 어제. 공휴일 등으로 실행하지 않은 날도 빠지지 않는다.
+    -- 기간을 바꾸려면 이 쿼리가 아니라 실행 시 뜨는 기간 확인 프롬프트에서 시작일을 직접 입력한다.
+    -- BigQuery 콘솔에서 단독 실행할 때는 @start_date / @end_date 를 DATE 'YYYY-MM-DD' 로 바꿔서 쓴다.
+    @start_date AS start_date,
+    @end_date AS end_date,
     DATE '2026-07-22' AS unpack_date,
     CURRENT_DATE('Asia/Singapore') AS update_date,
     'QHB8' AS series_name,
-    'Pre-Teaser' AS phase_name,
+    'Sustain' AS phase_name,
     'Global' AS subsidiary,
     'Global' AS region,
     'global' AS scope,
@@ -29,7 +24,7 @@ WITH params AS (
 ),
 -- ============================================================
 -- 0. 전일(D-1) 적재 여부 확인
---    최종 조회 기간은 params에서 월요일 금~일 / 그 외 전일로 설정
+--    최종 조회 기간은 params의 @start_date ~ @end_date (적재 확인은 전일 기준)
 -- ============================================================
 target AS (
   SELECT
