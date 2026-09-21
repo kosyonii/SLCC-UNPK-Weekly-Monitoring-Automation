@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased]
+
+### 변경
+- 복붙용 산출물 CSV에 헤더 행 포함 (기존: 헤더 없음)
+- 복붙용 산출물 파일명을 `<추출날짜YYMMDD>_UNPK_Monitoring.csv`로 단순화
+- 행 수 검수를 하루당 기준으로 변경: 월요일(3일치)에는 임계값에 3을 곱해 비교
+
+### 추가
+- requirements.txt에 db-dtypes 추가 (BigQuery 결과 DataFrame 변환에 필요)
+
 ## [0.1.0] - 2026-09-21
 
 ### 추가

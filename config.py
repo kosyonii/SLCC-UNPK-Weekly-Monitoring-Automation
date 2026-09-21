@@ -14,7 +14,7 @@ load_dotenv()
 # --- GCP / BigQuery ---
 GCP_PROJECT_ID: str = os.getenv("GCP_PROJECT_ID", "slcc-buzz-agent-dev")
 
-# --- 검수 임계값 ---
+# --- 검수 임계값 (하루당 행 수 기준) ---
 ROW_COUNT_MIN: int = int(os.getenv("ROW_COUNT_MIN", "2000"))
 ROW_COUNT_MAX: int = int(os.getenv("ROW_COUNT_MAX", "2400"))
 

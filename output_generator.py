@@ -22,13 +22,14 @@ def build_expected_filename(today: date | None = None) -> str:
 
 def save_copy_paste_output(df: pd.DataFrame, today: date | None = None) -> str:
     """
-    헤더 없이, SharePoint 파일과 동일한 컬럼 순서로 CSV를 저장한다.
+    헤더를 포함해, SharePoint 파일과 동일한 컬럼 순서로 CSV를 저장한다.
     반환값은 저장된 파일 경로(문자열).
     """
     ordered = df[EXPECTED_COLUMNS]
-    filename = f"{build_expected_filename(today)}_append.csv"
+    today = today or date.today()
+    filename = f"{today.strftime('%y%m%d')}_UNPK_Monitoring.csv"
     path = OUTPUT_DIR / filename
-    ordered.to_csv(path, header=False, index=False, encoding="utf-8-sig")
+    ordered.to_csv(path, header=True, index=False, encoding="utf-8-sig")
     return str(path)
 
 

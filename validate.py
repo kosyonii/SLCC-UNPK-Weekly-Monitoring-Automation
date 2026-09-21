@@ -3,7 +3,7 @@
 
 - 날짜 범위 검증 (월요일=직전 금~일 3일치, 그 외=전일 하루, 공휴일 미고려)
 - subsidiary/region/scope = Global/global 100% 검증
-- 행 수 2000~2400 범위 검증
+- 행 수 검증 (하루당 2000~2400, 추출 일수만큼 곱해서 비교)
 """
 from __future__ import annotations
 
@@ -80,13 +80,19 @@ def validate_global_scope(df: pd.DataFrame) -> ValidationResult:
     return result
 
 
-def validate_row_count(df: pd.DataFrame) -> ValidationResult:
+def validate_row_count(df: pd.DataFrame, today: date | None = None) -> ValidationResult:
+    """ROW_COUNT_MIN/MAX는 하루당 기준이므로 예상 추출 일수를 곱해 비교한다."""
     result = ValidationResult(passed=True)
     count = len(df)
 
-    if not (ROW_COUNT_MIN <= count <= ROW_COUNT_MAX):
+    days = len(_date_span(*expected_date_range(today)))
+    total_min = ROW_COUNT_MIN * days
+    total_max = ROW_COUNT_MAX * days
+
+    if not (total_min <= count <= total_max):
         result.add(
-            f"행 수 {count}건이 정상 범위({ROW_COUNT_MIN}~{ROW_COUNT_MAX})를 벗어남 — 이상치로 플래그"
+            f"행 수 {count}건이 정상 범위({total_min}~{total_max}, "
+            f"하루 {ROW_COUNT_MIN}~{ROW_COUNT_MAX} x {days}일)를 벗어남 — 이상치로 플래그"
         )
 
     return result
